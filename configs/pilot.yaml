@@ -1,0 +1,40 @@
+# Konfiguracja pilotażu. Wszystko uruchamiamy na instancji Vast.ai.
+# Wartości oznaczone TODO ustalamy w kroku 2 (vLLM) albo w trakcie pilotażu.
+
+model:
+  # Nazwa, pod którą vLLM serwuje model (--served-model-name); tej nazwy używają frameworki.
+  served_name: qwen3.8-27b
+  # Repozytorium HF z 4-bitową wersją modelu. TODO (krok 2): wybrać format kwantyzacji (AWQ/GPTQ/...).
+  hf_repo: TODO
+  enable_thinking: false        # na razie wyłączone; ostateczna decyzja po pilotażu
+
+generation:
+  # W pilotażu temperatura nie jest istotna; ustalamy ją przed eksperymentem głównym.
+  # Tymczasowo: zalecenia Qwen3 dla trybu bez myślenia (zweryfikować dla Qwen3.8).
+  temperature: 0.7
+  top_p: 0.8
+  max_tokens: 4096              # limit długości pojedynczej odpowiedzi modelu
+  seed: 0
+
+endpoints:
+  vllm_base_url: http://127.0.0.1:8000/v1
+  # Proxy logujące tokeny i czas; frameworki łączą się TYLKO przez nie.
+  # {run_id} jest podstawiany przez runner dla każdego przebiegu.
+  proxy_base_url: http://127.0.0.1:8001/run/{run_id}/v1
+  api_key: EMPTY                # vLLM nie wymaga klucza, ale klienci OpenAI chcą jakąś wartość
+
+limits:
+  max_iterations: 3             # iteracja = jedno przekazanie kodu Wykonawcy do Weryfikatora
+  run_timeout_s: 600            # limit czasu przebiegu (rozważamy 300 s)
+  max_llm_calls: 60             # twardy limit zapytań do modelu na przebieg; TODO: dobrać w pilotażu
+
+sandbox:
+  exec_timeout_s: 10            # limit czasu jednego uruchomienia programu (run_python / pojedynczy test)
+  memory_limit_mb: 1024
+  max_output_chars: 4000        # ile wyjścia programu oddajemy agentowi
+
+tasks:
+  file: data/pilot_tasks.json   # ID zadań pilotażowych (krok 3)
+
+output:
+  results_dir: results

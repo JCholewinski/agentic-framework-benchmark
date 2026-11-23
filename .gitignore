@@ -1,0 +1,20 @@
+# Python / uv
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# Sekrety (np. HF_TOKEN)
+.env
+
+# Pobrane dane i cache (LiveCodeBench, wagi modelu)
+data/cache/
+models/
+
+# Logi robocze (vLLM, proxy); wyniki przebiegów w results/ trzymamy w repo
+logs/
+*.log
+
+# macOS
+.DS_Store
