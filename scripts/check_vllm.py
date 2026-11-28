@@ -59,7 +59,7 @@ VERDICT_TASK = (
 class Checker:
     def __init__(self, cfg: Config):
         self.cfg = cfg
-        self.client = OpenAI(base_url=cfg.endpoints.vllm_base_url, api_key=cfg.endpoints.api_key, timeout=600)
+        self.client = OpenAI(base_url=cfg.vllm_base_url, api_key=cfg.endpoints.api_key, timeout=600)
         g = cfg.generation
         self.sampling = {"temperature": g.temperature, "top_p": g.top_p, "presence_penalty": g.presence_penalty, "seed": g.seed}
         self.extra = {"top_k": g.top_k}
@@ -191,7 +191,7 @@ def main() -> None:
 
     cfg = load_config(a.config)
     ck = Checker(cfg)
-    root = cfg.endpoints.vllm_base_url.removesuffix("/v1")
+    root = cfg.vllm_base_url.removesuffix("/v1")
     report: dict = {
         "time": datetime.now().isoformat(timespec="seconds"),
         "vllm_version": httpx.get(f"{root}/version", timeout=10).json().get("version"),

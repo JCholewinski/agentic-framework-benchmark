@@ -21,7 +21,7 @@ def vllm_args(cfg: Config) -> list[str]:
     args = [
         cfg.model.hf_repo,
         "--served-model-name", cfg.model.served_name,
-        "--host", "127.0.0.1",
+        "--host", cfg.endpoints.host,
         "--port", str(v.port),
         "--max-model-len", str(v.max_model_len),
         "--gpu-memory-utilization", str(v.gpu_memory_utilization),

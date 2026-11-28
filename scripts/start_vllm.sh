@@ -16,9 +16,35 @@ CONFIG="${1:?Podaj config, np. configs/pilot.yaml}"
 shift
 
 export HF_HOME="${HF_HOME:-/workspace/hf}"   # wagi (~20 GB) na dysku instancji, nie w repo
+unset VIRTUAL_ENV   # szablony Vast.ai aktywują /venv/main; uv i tak używa .venv projektu
 
 mapfile -d '' ARGS < <(uv run --frozen python -m bench.vllm_server "$CONFIG" "$@")
 WANT="$(uv run --frozen python -c "from bench.config import load_config; print(load_config('$CONFIG').vllm.version)")"
+
+arg_value() {
+    local i
+    for ((i = 0; i < ${#ARGS[@]} - 1; i++)); do
+        if [[ "${ARGS[i]}" == "$1" ]]; then echo "${ARGS[i+1]}"; fi
+    done
+}
+HOST="$(arg_value --host)"
+PORT="$(arg_value --port)"
+
+# --- Kontrola przed startem: GPU i port muszą być wolne -------------------------------------
+# (Szablon vLLM od Vast.ai sam startuje własny serwer z innym modelem i zajmuje GPU oraz port 8000.)
+GPU_APPS="$(nvidia-smi --query-compute-apps=pid,process_name,used_memory --format=csv,noheader 2>/dev/null || true)"
+if [[ -n "$GPU_APPS" ]]; then
+    echo "!! Na GPU działają już inne procesy:" >&2
+    echo "$GPU_APPS" | sed 's/^/     /' >&2
+    echo "   Co to jest:   ps -eo pid,ppid,cmd | grep -i vllm | grep -v grep" >&2
+    echo "   Szablon Vast.ai: supervisorctl stop vllm, potem kill <PID serwera i EngineCore>" >&2
+    exit 1
+fi
+if ! python3 -c "import socket,sys; socket.socket().bind(('$HOST', $PORT))" 2>/dev/null; then
+    echo "!! Port $HOST:$PORT jest zajęty. Kto go trzyma:  ss -ltnp | grep ':$PORT '" >&2
+    echo "   Zmień vllm.port w configu albo uruchom z --set port=<inny>." >&2
+    exit 1
+fi
 
 vllm_version() { "$1" --version 2>/dev/null | tail -1 | tr -d '[:space:]'; }
 

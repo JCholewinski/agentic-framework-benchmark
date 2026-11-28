@@ -28,6 +28,15 @@ bash scripts/setup_vastai.sh
 - Filtr „Max CUDA” ≥ 13.0: obraz vLLM 0.34.0 jest zbudowany na CUDA 13.0, co wymaga sterownika NVIDIA ≥ 580.
 - Dysk ≥ 80 GB (wagi ~20 GB, obraz, środowiska, dane), RAM ≥ 32 GB, CPU ≥ 8 rdzeni (piaskownica), szybkie łącze (pobieranie wag).
 - Model `RedHatAI/Qwen3.8-27B-INT4` jest publiczny, więc token Hugging Face nie jest potrzebny.
+- Uwaga na **szablon vLLM od Vast.ai**: przy starcie sam uruchamia vLLM z innym modelem (np. `Qwen/Qwen3.5-9B`),
+  który zajmuje ~21 GB VRAM, a jego proxy (`caddy`) trzyma port 8000. Dlatego nasz vLLM działa na porcie 8100.
+  Serwer z szablonu trzeba zatrzymać po każdym starcie instancji (`start_vllm.sh` to wykrywa):
+
+  ```bash
+  supervisorctl stop vllm
+  ps -eo pid,ppid,cmd | grep -i vllm | grep -v grep    # zostają: `vllm serve ...` i VLLM::EngineCore
+  kill <PID vllm serve> <PID EngineCore>
+  ```
 
 ## Serwer vLLM i test modelu (krok 2)
 

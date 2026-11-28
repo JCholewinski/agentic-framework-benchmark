@@ -13,7 +13,7 @@ model:
 
 vllm:
   version: "0.34.0"             # model wymaga >= 0.17.0
-  port: 8000
+  port: 8100                    # nie 8000: na szablonach Vast.ai port 8000 zajmuje ich proxy (caddy)
   max_model_len: 32768          # TODO (krok 2): zmierzyć, ile mieści się w VRAM
   gpu_memory_utilization: 0.92
   kv_cache_dtype: fp8           # ~32 KiB/token (tylko 16 z 64 warstw ma klasyczną atencję)
@@ -34,11 +34,12 @@ generation:
   seed: 0
 
 endpoints:
-  vllm_base_url: http://127.0.0.1:8000/v1
-  # Proxy logujące tokeny i czas; frameworki łączą się TYLKO przez nie.
-  # {run_id} jest podstawiany przez runner dla każdego przebiegu.
-  proxy_base_url: http://127.0.0.1:8001/run/{run_id}/v1
-  api_key: EMPTY                # vLLM nie wymaga klucza, ale klienci OpenAI chcą jakąś wartość
+  # Adresy budowane z portów (bench/config.py):
+  #   vLLM:  http://<host>:<vllm.port>/v1
+  #   proxy: http://<host>:<proxy_port>/run/<run_id>/v1  (frameworki łączą się TYLKO przez proxy)
+  host: 127.0.0.1
+  proxy_port: 8101
+  api_key: EMPTY               # vLLM nie wymaga klucza, ale klienci OpenAI chcą jakąś wartość
 
 limits:
   max_iterations: 3             # iteracja = jedno przekazanie kodu Wykonawcy do Weryfikatora

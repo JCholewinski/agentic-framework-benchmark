@@ -46,13 +46,9 @@ class GenerationCfg(_Strict):
 
 
 class EndpointsCfg(_Strict):
-    vllm_base_url: str
-    proxy_base_url: str
+    host: str
+    proxy_port: int
     api_key: str
-
-    def base_url_for(self, run_id: str) -> str:
-        """Adres, którego framework używa w danym przebiegu (run_id w ścieżce, patrz bench/proxy.py)."""
-        return self.proxy_base_url.format(run_id=run_id)
 
 
 class LimitsCfg(_Strict):
@@ -84,6 +80,15 @@ class Config(_Strict):
     sandbox: SandboxCfg
     tasks: TasksCfg
     output: OutputCfg
+
+    @property
+    def vllm_base_url(self) -> str:
+        """Bezpośredni adres vLLM (tylko dla proxy i testów serwera, nie dla frameworków)."""
+        return f"http://{self.endpoints.host}:{self.vllm.port}/v1"
+
+    def proxy_base_url(self, run_id: str) -> str:
+        """Adres, którego framework używa w danym przebiegu (run_id w ścieżce, patrz bench/proxy.py)."""
+        return f"http://{self.endpoints.host}:{self.endpoints.proxy_port}/run/{run_id}/v1"
 
 
 def load_config(path: str | Path) -> Config:
