@@ -14,7 +14,9 @@ model:
 vllm:
   version: "0.34.0"             # model wymaga >= 0.17.0
   port: 8100                    # nie 8000: na szablonach Vast.ai port 8000 zajmuje ich proxy (caddy)
-  max_model_len: 32768          # TODO (krok 2): zmierzyć, ile mieści się w VRAM
+  # Pomiar 28.11 (RTX 3090): pula KV cache = 81 313 tokenów, więc jedna rozmowa może mieć do ~81k.
+  # Limit dotyczy jednej rozmowy, nie zmienia rozmiaru puli; przebiegi idą po kolei.
+  max_model_len: 65536
   gpu_memory_utilization: 0.92
   kv_cache_dtype: fp8           # ~32 KiB/token (tylko 16 z 64 warstw ma klasyczną atencję)
   max_num_seqs: 4               # przebiegi idą po kolei; mniej sekwencji = mniej pamięci na CUDA graphs
