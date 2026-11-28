@@ -4,15 +4,32 @@
 model:
   # Nazwa, pod którą vLLM serwuje model (--served-model-name); tej nazwy używają frameworki.
   served_name: qwen3.8-27b
-  # Repozytorium HF z 4-bitową wersją modelu. TODO (krok 2): wybrać format kwantyzacji (AWQ/GPTQ/...).
-  hf_repo: TODO
-  enable_thinking: false        # na razie wyłączone; ostateczna decyzja po pilotażu
+  # Kwantyzacja W4A16 (AWQ + GPTQ, compressed-tensors) przygotowana pod vLLM; działa na RTX 4090 (Ada).
+  # Brak oficjalnej 4-bitowej wersji od Qwen; NVFP4 odpada (natywnie tylko Blackwell).
+  hf_repo: RedHatAI/Qwen3.8-27B-INT4
+  # Na razie wyłączone; ostateczna decyzja po pilotażu. Wymuszane po stronie serwera
+  # (--default-chat-template-kwargs), więc jednakowe dla wszystkich frameworków.
+  enable_thinking: false
+
+vllm:
+  version: "0.34.0"             # model wymaga >= 0.17.0
+  port: 8000
+  max_model_len: 32768          # TODO (krok 2): zmierzyć, ile mieści się w VRAM
+  gpu_memory_utilization: 0.92
+  kv_cache_dtype: fp8           # ~32 KiB/token (tylko 16 z 64 warstw ma klasyczną atencję)
+  max_num_seqs: 4               # przebiegi idą po kolei; mniej sekwencji = mniej pamięci na CUDA graphs
+  language_model_only: true     # nie ładujemy części wizyjnej modelu
+  enforce_eager: false          # true, jeśli start pada z OOM przy CUDA graphs (wolniejsze generowanie)
+  tool_call_parser: qwen3_coder # w vLLM 0.34.0 qwen3_xml to alias tej samej klasy
+  reasoning_parser: qwen3
 
 generation:
   # W pilotażu temperatura nie jest istotna; ustalamy ją przed eksperymentem głównym.
-  # Tymczasowo: zalecenia Qwen3 dla trybu bez myślenia (zweryfikować dla Qwen3.8).
+  # Tymczasowo: zalecenia Qwen3.8 dla trybu bez myślenia (karta modelu).
   temperature: 0.7
   top_p: 0.8
+  top_k: 20
+  presence_penalty: 1.5
   max_tokens: 4096              # limit długości pojedynczej odpowiedzi modelu
   seed: 0
 

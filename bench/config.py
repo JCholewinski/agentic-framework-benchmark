@@ -19,11 +19,30 @@ class ModelCfg(_Strict):
     enable_thinking: bool
 
 
+class VllmCfg(_Strict):
+    version: str
+    port: int
+    max_model_len: int
+    gpu_memory_utilization: float
+    kv_cache_dtype: str
+    max_num_seqs: int
+    language_model_only: bool
+    enforce_eager: bool
+    tool_call_parser: str
+    reasoning_parser: str
+
+
 class GenerationCfg(_Strict):
     temperature: float
     top_p: float
+    top_k: int
+    presence_penalty: float
     max_tokens: int
     seed: int
+
+    def sampling_params(self) -> dict:
+        """Parametry samplingu w formacie API vLLM (top_k nie należy do standardu OpenAI)."""
+        return self.model_dump()
 
 
 class EndpointsCfg(_Strict):
@@ -58,6 +77,7 @@ class OutputCfg(_Strict):
 
 class Config(_Strict):
     model: ModelCfg
+    vllm: VllmCfg
     generation: GenerationCfg
     endpoints: EndpointsCfg
     limits: LimitsCfg

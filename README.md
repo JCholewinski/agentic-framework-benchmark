@@ -21,6 +21,34 @@ git clone <adres repo> agent-bench && cd agent-bench
 bash scripts/setup_vastai.sh
 ```
 
+## Instancja Vast.ai
+
+- GPU: 1× RTX 3090 (24 GB).
+- Obraz: `vllm/vllm-openai:v0.34.0`, tryb uruchomienia SSH (obraz domyślnie sam startuje serwer, a my startujemy go skryptem).
+- Filtr „Max CUDA” ≥ 13.0: obraz vLLM 0.34.0 jest zbudowany na CUDA 13.0, co wymaga sterownika NVIDIA ≥ 580.
+- Dysk ≥ 80 GB (wagi ~20 GB, obraz, środowiska, dane), RAM ≥ 32 GB, CPU ≥ 8 rdzeni (piaskownica), szybkie łącze (pobieranie wag).
+- Model `RedHatAI/Qwen3.8-27B-INT4` jest publiczny, więc token Hugging Face nie jest potrzebny.
+
+## Serwer vLLM i test modelu (krok 2)
+
+Najprościej użyć instancji z obrazu Dockera `vllm/vllm-openai:v0.34.0`; bez niego skrypt sam zainstaluje
+vLLM w osobnym środowisku (`/workspace/vllm-env`). Wagi modelu (~20 GB) trafiają do `/workspace/hf`.
+
+```bash
+tmux new -s vllm
+bash scripts/start_vllm.sh configs/pilot.yaml            # opcjonalnie: --set max_model_len=49152
+```
+
+W drugim oknie, gdy serwer zgłosi gotowość:
+
+```bash
+uv run python scripts/check_vllm.py configs/pilot.yaml --vllm-log logs/vllm_<data>.log
+```
+
+Raport trafia do `results/checks/`.
+
+## Zależności
+
 Zmiana lub dodanie zależności (lokalnie), potem commit `pyproject.toml` i `uv.lock`:
 
 ```bash
